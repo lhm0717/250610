@@ -4,8 +4,19 @@
   <meta charset="UTF-8">
   <title>지뢰찾기 게임</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-    #board { display: grid; margin: 20px auto; gap: 2px; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+
+    #board {
+      display: grid;
+      margin: 20px auto;
+      gap: 2px;
+      justify-content: center;
+    }
+
     .cell {
       width: 30px;
       height: 30px;
@@ -17,9 +28,19 @@
       font-weight: bold;
       border: 1px solid #aaa;
     }
-    .cell.revealed { background: #fff; cursor: default; }
-    .cell.mine { background: red; }
-    .controls { margin-bottom: 10px; }
+
+    .cell.revealed {
+      background: #fff;
+      cursor: default;
+    }
+
+    .cell.mine {
+      background: red;
+    }
+
+    .controls {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -31,7 +52,7 @@
     <select id="difficulty">
       <option value="easy">쉬움 (9x9, 10개)</option>
       <option value="medium">중간 (16x16, 40개)</option>
-      <option value="hard">어려움 (30x16, 99개)</option>
+      <option value="hard">어려움 (16x30, 99개)</option>
     </select>
     <button onclick="startGame()">게임 시작</button>
   </div>
@@ -69,8 +90,8 @@
 
       const boardDiv = document.getElementById("board");
       boardDiv.innerHTML = '';
-      boardDiv.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-      boardDiv.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      boardDiv.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+      boardDiv.style.gridTemplateRows = `repeat(${rows}, 30px)`;
 
       for (let r = 0; r < rows; r++) {
         board[r] = [];
@@ -186,7 +207,7 @@
       }
     }
 
-    // 자동 시작
+    // 페이지 로드시 자동 시작
     startGame();
   </script>
 
