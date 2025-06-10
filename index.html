@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>지뢰찾기 게임</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+    #board { display: grid; margin: 20px auto; gap: 2px; }
+    .cell {
+      width: 30px;
+      height: 30px;
+      background: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      border: 1px solid #aaa;
+    }
+    .cell.revealed { background: #fff; cursor: default; }
+    .cell.mine { background: red; }
+    .controls { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>지뢰찾기</h1>
+
+  <div class="controls">
+    <label for="difficulty">난이도: </label>
+    <select id="difficulty">
+      <option value="easy">쉬움 (9x9, 10개)</option>
+      <option value="medium">중간 (16x16, 40개)</option>
+      <option value="hard">어려움 (30x16, 99개)</option>
+    </select>
+    <button onclick="startGame()">게임 시작</button>
+  </div>
+
+  <div>
+    ⏱️ 시간: <span id="timer">0</span>초
+  </div>
+
+  <div id="board"></div>
+
+  <script>
+    const difficulties = {
+      easy: { rows: 9, cols: 9, mines: 10 },
+      medium: { rows: 16, cols: 16, mines: 40 },
+      hard: { rows: 16, cols: 30, mines: 99 },
+    };
+
+    let board = [];
+    let mineLocations = [];
+    let timer = 0;
+    let interval = null;
+    let firstClick = true;
+
+    function startGame() {
+      clearInterval(interval);
+      timer = 0;
+      document.getElementById("timer").innerText = timer;
+
+      const difficulty = document.getElementById("difficulty").value;
+      const { rows, cols, mines } = difficulties[difficulty];
+
+      board = [];
+      mineLocations = [];
+      firstClick = true;
+
+      const boardDiv = document.getElementById("board");
+      boardDiv.innerHTML = '';
+      boardDiv.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+      boardDiv.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+      for (let r = 0; r < rows; r++) {
+        board[r] = [];
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.addEventListener("click", onCellClick);
+          board[r][c] = { revealed: false, mine: false, element: cell };
+          boardDiv.appendChild(cell);
+        }
+      }
+    }
+
+    function placeMines(rows, cols, mines, startRow, startCol) {
+      let placed = 0;
+      while (placed < mines) {
+        const r = Math.floor(Math.random() * rows);
+        const c = Math.floor(Math.random() * cols);
+        if ((r === startRow && c === startCol) || board[r][c].mine) continue;
+        board[r][c].mine = true;
+        mineLocations.push([r, c]);
+        placed++;
+      }
+    }
+
+    function onCellClick(e) {
+      const row = parseInt(e.target.dataset.row);
+      const col = parseInt(e.target.dataset.col);
+      const difficulty = document.getElementById("difficulty").value;
+      const { rows, cols, mines } = difficulties[difficulty];
+
+      if (firstClick) {
+        placeMines(rows, cols, mines, row, col);
+        interval = setInterval(() => {
+          timer++;
+          document.getElementById("timer").innerText = timer;
+        }, 1000);
+        firstClick = false;
+      }
+
+      revealCell(row, col);
+
+      if (board[row][col].mine) {
+        gameOver(false);
+      } else {
+        checkWin(rows, cols, mines);
+      }
+    }
+
+    function revealCell(r, c) {
+      if (r < 0 || c < 0 || r >= board.length || c >= board[0].length) return;
+      const cell = board[r][c];
+      if (cell.revealed) return;
+
+      cell.revealed = true;
+      cell.element.classList.add("revealed");
+
+      if (cell.mine) {
+        cell.element.classList.add("mine");
+        cell.element.innerText = "💣";
+        return;
+      }
+
+      const count = countAdjacentMines(r, c);
+      if (count > 0) {
+        cell.element.innerText = count;
+      } else {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr !== 0 || dc !== 0) {
+              revealCell(r + dr, c + dc);
+            }
+          }
+        }
+      }
+    }
+
+    function countAdjacentMines(r, c) {
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nc >= 0 && nr < board.length && nc < board[0].length) {
+            if (board[nr][nc].mine) count++;
+          }
+        }
+      }
+      return count;
+    }
+
+    function gameOver(won) {
+      clearInterval(interval);
+      for (const [r, c] of mineLocations) {
+        board[r][c].element.innerText = "💣";
+        board[r][c].element.classList.add("mine");
+      }
+      setTimeout(() => {
+        alert(won ? `🎉 승리! 시간: ${timer}초` : "💥 지뢰를 밟았습니다!");
+      }, 100);
+    }
+
+    function checkWin(rows, cols, mines) {
+      let revealed = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (board[r][c].revealed) revealed++;
+        }
+      }
+      if (revealed === rows * cols - mines) {
+        gameOver(true);
+      }
+    }
+
+    // 자동 시작
+    startGame();
+  </script>
+
+</body>
+</html>
