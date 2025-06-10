@@ -20,23 +20,39 @@
     .cell {
       width: 30px;
       height: 30px;
-      background: #ddd;
+      background: #ccc;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       font-weight: bold;
-      border: 1px solid #aaa;
+      font-size: 16px;
+      border: 1px solid #999;
+      user-select: none;
     }
 
     .cell.revealed {
-      background: #fff;
+      background: #eee;
       cursor: default;
     }
 
     .cell.mine {
-      background: red;
+      background: #e74c3c;
+      color: white;
     }
+
+    .cell.flagged {
+      background: #f1c40f;
+    }
+
+    .cell.num1 { color: #1e90ff; }
+    .cell.num2 { color: #28a745; }
+    .cell.num3 { color: #dc3545; }
+    .cell.num4 { color: #6f42c1; }
+    .cell.num5 { color: #fd7e14; }
+    .cell.num6 { color: #20c997; }
+    .cell.num7 { color: #343a40; }
+    .cell.num8 { color: #000; }
 
     .controls {
       margin-bottom: 10px;
@@ -75,6 +91,7 @@
     let timer = 0;
     let interval = null;
     let firstClick = true;
+    let flaggedCount = 0;
 
     function startGame() {
       clearInterval(interval);
@@ -87,6 +104,7 @@
       board = [];
       mineLocations = [];
       firstClick = true;
+      flaggedCount = 0;
 
       const boardDiv = document.getElementById("board");
       boardDiv.innerHTML = '';
@@ -101,7 +119,13 @@
           cell.dataset.row = r;
           cell.dataset.col = c;
           cell.addEventListener("click", onCellClick);
-          board[r][c] = { revealed: false, mine: false, element: cell };
+          cell.addEventListener("contextmenu", onCellRightClick);
+          board[r][c] = {
+            revealed: false,
+            mine: false,
+            flagged: false,
+            element: cell
+          };
           boardDiv.appendChild(cell);
         }
       }
@@ -122,6 +146,10 @@
     function onCellClick(e) {
       const row = parseInt(e.target.dataset.row);
       const col = parseInt(e.target.dataset.col);
+      const cell = board[row][col];
+
+      if (cell.revealed || cell.flagged) return;
+
       const difficulty = document.getElementById("difficulty").value;
       const { rows, cols, mines } = difficulties[difficulty];
 
@@ -136,17 +164,30 @@
 
       revealCell(row, col);
 
-      if (board[row][col].mine) {
+      if (cell.mine) {
         gameOver(false);
       } else {
         checkWin(rows, cols, mines);
       }
     }
 
+    function onCellRightClick(e) {
+      e.preventDefault();
+      const row = parseInt(e.target.dataset.row);
+      const col = parseInt(e.target.dataset.col);
+      const cell = board[row][col];
+
+      if (cell.revealed) return;
+
+      cell.flagged = !cell.flagged;
+      cell.element.classList.toggle("flagged");
+      cell.element.innerText = cell.flagged ? "🚩" : "";
+    }
+
     function revealCell(r, c) {
       if (r < 0 || c < 0 || r >= board.length || c >= board[0].length) return;
       const cell = board[r][c];
-      if (cell.revealed) return;
+      if (cell.revealed || cell.flagged) return;
 
       cell.revealed = true;
       cell.element.classList.add("revealed");
@@ -160,6 +201,7 @@
       const count = countAdjacentMines(r, c);
       if (count > 0) {
         cell.element.innerText = count;
+        cell.element.classList.add("num" + count);
       } else {
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
@@ -187,8 +229,9 @@
     function gameOver(won) {
       clearInterval(interval);
       for (const [r, c] of mineLocations) {
-        board[r][c].element.innerText = "💣";
-        board[r][c].element.classList.add("mine");
+        const cell = board[r][c];
+        cell.element.innerText = "💣";
+        cell.element.classList.add("mine");
       }
       setTimeout(() => {
         alert(won ? `🎉 승리! 시간: ${timer}초` : "💥 지뢰를 밟았습니다!");
@@ -207,7 +250,7 @@
       }
     }
 
-    // 페이지 로드시 자동 시작
+    // 시작 시 기본 게임 로드
     startGame();
   </script>
 
